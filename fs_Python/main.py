@@ -9,8 +9,8 @@ from datetime import datetime, timedelta
 from dependencies import get_current_user_from_cookie
 from routes import admin_routes, user_routes
 
-SECRET_KEY = "your-secret-key-here"  # Replace with a strong and unique secret key
-ALGORITHM = "HS256"  # Choose a secure algorithm, such as "HS256" for HMAC-SHA256
+SECRET_KEY = "your-secret-key-here"  
+ALGORITHM = "HS256"  
 ACCESS_TOKEN_EXPIRE_MINUTES = 30 
 
 templates = Jinja2Templates(directory="templates")
