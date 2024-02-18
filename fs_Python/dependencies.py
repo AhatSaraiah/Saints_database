@@ -4,8 +4,8 @@ from jose import JWTError, jwt
 from pydantic import BaseModel
 from typing import Optional
 
-SECRET_KEY = "your-secret-key-here"  # Replace with a strong and unique secret key
-ALGORITHM = "HS256"  # Choose a secure algorithm, such as "HS256" for HMAC-SHA256
+SECRET_KEY = "your-secret-key-here"  
+ALGORITHM = "HS256"  
 
 # Define the structure of the JWT token data using Pydantic BaseModel
 class TokenData(BaseModel):
