@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Data</title>
+</head>
+<body>
+    <h1>Customer Data</h1>
+    <ul>
+            <li>
+                <strong>ID:</strong> {{ customer.id }}<br>
+                <strong>Name:</strong> {{ customer.name }}<br>
+                <strong>Age:</strong> {{ customer.age }}<br>
+                <strong>Occupation:</strong> {{ customer.occupation.name }}<br>
+                <strong>Is Saint:</strong> {{ customer.occupation.isSaint }}<br>
+                <hr>
+            </li>
+    </ul>
+</body>
+</html>
