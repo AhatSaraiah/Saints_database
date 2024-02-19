@@ -23,18 +23,18 @@ async def get_current_user_from_cookie(request: Request, call_next):
         if username is None:
             raise credentials_exception
 
-        # Fetch user data from the database based on the username
+        # Fetch the role from the database based on the username
         connection = get_database_connection()
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT user_name, role FROM users WHERE user_name = %s", (username,))
-        user_data = cursor.fetchone()
-        cursor.close()
+        cursor.callproc("GetUserRole", (username,))
+        result = next(cursor.stored_results())
+        user_data = result.fetchone()
         connection.close()
 
-        if not user_data:
+        if user_data is None:
             raise credentials_exception
 
-        token_data = {"username": user_data["user_name"], "role": user_data["role"]}
+        token_data = {"username": username, "role": user_data["role"]}
     except JWTError:
         raise credentials_exception
 
@@ -42,12 +42,10 @@ async def get_current_user_from_cookie(request: Request, call_next):
     response = await call_next(request)
     return response
 
-    
-
     # Middleware for checking admin access
 async def check_admin_access(request: Request, call_next):
     user_data = getattr(request.state, "user_data", {})
-    print("User Data:", user_data)  # Add this line for debugging
+    print("User Data:", user_data) 
     if user_data.get("role") == "admin":
         response = await call_next(request)
         return response
