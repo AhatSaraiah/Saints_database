@@ -28,17 +28,17 @@ async def get_current_user_from_cookie(request: Request, call_next):
         cursor = connection.cursor(dictionary=True)
         cursor.callproc("GetUserRole", (username,))
         result = next(cursor.stored_results())
-        user_data = result.fetchone()
+        user_role = result.fetchone()
         connection.close()
 
-        if user_data is None:
+        if user_role is None:
             raise credentials_exception
 
-        token_data = {"username": username, "role": user_data["role"]}
+        token_data = {"username": username, "role": user_role}
     except JWTError:
         raise credentials_exception
 
-    request.state.user_data = token_data  # Store user_data in request state
+    request.state.user_data = token_data 
     response = await call_next(request)
     return response
 
@@ -57,3 +57,4 @@ async def set_cookies(response: Response, call_next):
     # Your existing code for setting cookies, if any
     response = await call_next(response)
     return response
+

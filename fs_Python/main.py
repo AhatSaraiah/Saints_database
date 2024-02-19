@@ -1,22 +1,16 @@
 # main.py
-from fastapi import Depends, FastAPI,APIRouter, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from routes import admin_routes, user_routes,default_routes
 from config import SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES,ALGORITHM 
 from middlewares import get_current_user_from_cookie, check_admin_access, set_cookies
 from fastapi.responses import HTMLResponse, RedirectResponse
-from routes.default_routes import connect_database ,get_database_connection
+from mysql_connection import get_database_connection,get_database_connection
 from jose import jwt
 
 app = FastAPI()
 
-
-connect_database()
-
-
-# Dependency for getting the current user from the token in cookies
-# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 templates = Jinja2Templates(directory="templates")
 # Register middlewares
