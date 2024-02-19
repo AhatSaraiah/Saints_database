@@ -1,11 +1,9 @@
-from fastapi import APIRouter, FastAPI, Path, Request, Query,HTTPException,status,Depends,Form
+from fastapi import APIRouter, Path, Request, Query,HTTPException,status,Depends,Form
 from fastapi.responses import HTMLResponse,JSONResponse
 from fastapi.templating import Jinja2Templates
-from typing_extensions import Annotated
-from mysql_connection import get_database_connection,initialize_db
+from mysql_connection import get_database_connection
 import mysql.connector
 from models.models import Customer
-from routes.default_routes import connect_database
 from middlewares import get_current_user_from_cookie  
 from mysql_connection import get_database_connection
 

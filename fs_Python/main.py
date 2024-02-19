@@ -1,21 +1,16 @@
 # main.py
-
 from fastapi import Depends, FastAPI,APIRouter, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from routes import admin_routes, user_routes,default_routes
 from config import SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES,ALGORITHM 
-from dependencies import is_admin
 from middlewares import get_current_user_from_cookie, check_admin_access, set_cookies
 from fastapi.responses import HTMLResponse
 from routes.default_routes import connect_database ,get_database_connection
 
 app = FastAPI()
 
-router = APIRouter()
-# app = FastAPI(debug=True)
 
-templates = Jinja2Templates(directory="templates")
 connect_database()
 
 # Register middlewares
