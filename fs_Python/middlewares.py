@@ -26,15 +26,16 @@ async def get_current_user_from_cookie(request: Request, call_next):
         # Fetch the role from the database based on the username
         connection = get_database_connection()
         cursor = connection.cursor(dictionary=True)
-        cursor.callproc("GetUserRole", (username,))
+        cursor.callproc("GetUser", (username,))
         result = next(cursor.stored_results())
-        user_role = result.fetchone()
+        user_data = result.fetchone()
         connection.close()
 
-        if user_role is None:
+        if user_data is None:
             raise credentials_exception
 
-        token_data = {"username": username, "role": user_role}
+        token_data = {"username": username, "role": user_data["role"]}
+
     except JWTError:
         raise credentials_exception
 
