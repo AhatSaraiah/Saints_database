@@ -1,14 +1,15 @@
 
 from ast import List
-from fastapi import FastAPI, Path, Request, Query,HTTPException,status,Depends,Form
+from fastapi import Path, Request, Query,HTTPException,status,Depends,Form,APIRouter
 import json
 from fastapi.responses import HTMLResponse,JSONResponse
 from fastapi.templating import Jinja2Templates
+from middlewares import get_current_user_from_cookie
 from mysql_connection import initialize_db
 from models.models import Customer, Short_Customer
-app = FastAPI(debug=True)
-templates = Jinja2Templates(directory="templates")
 
+router = APIRouter()
+templates = Jinja2Templates(directory="templates")
 
 
 def load_content_from_file():
@@ -16,8 +17,19 @@ def load_content_from_file():
         content = json.load(file)
     return content
 
+
+@router.get("/")
+async def get_default(current_user: dict = Depends(get_current_user_from_cookie)):
+    return {"message": f"Hello, {current_user['role']} {current_user['username']}!"}
+
+
+@router.post("/")
+async def post_default():
+    # Your code for handling POST requests
+    return {"message": "Received a POST request to /default/"}
+
 # 5  get saints whit parm: is_saint =true , HTMLResponse with html template
-@app.get("/saints", response_class=HTMLResponse)
+@router.get("/saints", response_class=HTMLResponse)
 async def get_saint(request: Request, is_saint: bool = Query(..., title="Customer isSaint", description="If the customer occupation isSaint")):
     content = load_content_from_file()
 
@@ -30,11 +42,10 @@ async def get_saint(request: Request, is_saint: bool = Query(..., title="Custome
 
     return templates.TemplateResponse("customers.html", {"request": request, "customers": customers})
 
-
     
 
 # # 2 with html - gets only saints, HTMLResponse
-@app.get("/saints", response_class=HTMLResponse)
+@router.get("/saints", response_class=HTMLResponse)
 async def get_saints(request: Request):
     content = load_content_from_file()
     
@@ -48,7 +59,7 @@ async def get_saints(request: Request):
 
 
 # #4 with html - get customers by name, HTMLResponse with html template + 9 adding limitation for params
-@app.get("/who", response_class=HTMLResponse)
+@router.get("/who", response_class=HTMLResponse)
 async def get_data_by_name(request:Request,name: str = Query(..., title="Customer Name", description="Name of the customer",min_length=2,max_length=11,regex="^[a-zA-Z]+$")):
     content = load_content_from_file()
 
@@ -66,7 +77,7 @@ async def get_data_by_name(request:Request,name: str = Query(..., title="Custome
    
 
 #1 with html: get customers, HTMLResponse with html template + 8 the name linkable
-@app.get("/customers", response_class=HTMLResponse)
+@router.get("/customers", response_class=HTMLResponse)
 async def get_data(request: Request):
     # Read the JSON file
     content = load_content_from_file()
@@ -82,7 +93,7 @@ async def get_data(request: Request):
 
 
 #3 with html - get customers short-desc, HTMLResponse with html template
-@app.get("/short-desc", response_class=HTMLResponse)
+@router.get("/short-desc", response_class=HTMLResponse)
 async def getData(request: Request):
     content = load_content_from_file()
 
@@ -96,7 +107,7 @@ async def getData(request: Request):
 
 
 #6 - post a new saint to json-file:
-@app.post("/saints")
+@router.post("/saints")
 async def add_new_saint(request: Request, new_customer: dict):
     try:
         content = load_content_from_file()
@@ -121,7 +132,7 @@ async def add_new_saint(request: Request, new_customer: dict):
 
 
 #6 with html - post a new saint to json-file using HTMLResponse and forms:
-@app.post("/saints", response_class=HTMLResponse)
+@router.post("/saints", response_class=HTMLResponse)
 async def add_new_saint(request: Request, name: str = Form(...), age: int = Form(...), is_saint: bool = Form(...)):
     try:
         content = load_content_from_file()
