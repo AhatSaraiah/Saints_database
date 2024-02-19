@@ -55,3 +55,4 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 app.include_router(admin_routes.router, prefix="/admin", tags=["admin"])
 app.include_router(user_routes.router, prefix="/user", tags=["user"])
+app.include_router(user_routes.router, prefix="/default", tags=["default"])
