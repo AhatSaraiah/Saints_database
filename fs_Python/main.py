@@ -19,9 +19,10 @@ templates = Jinja2Templates(directory="templates")
 connect_database()
 
 # Register middlewares
-app.middleware("http")(get_current_user_from_cookie)
 app.middleware("http")(set_cookies)
+app.middleware("http")(get_current_user_from_cookie)
 app.middleware("http")(check_admin_access)
+
 
 
 # Dependency for getting the current user from the token in cookies

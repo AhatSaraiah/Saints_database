@@ -6,29 +6,25 @@ from mysql_connection import get_database_connection,initialize_db
 import mysql.connector
 from models.models import Customer
 from routes.default_routes import connect_database
-from middlewares import get_current_user_from_cookie  # Import the middleware
+from middlewares import get_current_user_from_cookie  
 from mysql_connection import get_database_connection
 
 router = APIRouter()
-# app = FastAPI(debug=True)
-
 templates = Jinja2Templates(directory="templates")
-connect_database()
 
-
-def get_db_connection():
-    connection = get_database_connection()
-    try:
-        yield connection
-    finally:
-        connection.close()
-
-# ... (other route functions)
+# def get_db_connection():
+#     connection = get_database_connection()
+#     try:
+#         yield connection
+#     finally:
+#         connection.close()
 
 @router.get("/admin")
-async def get_admin(current_user: dict = Depends(get_current_user_from_cookie), db: mysql_connection.get_database_connection = Depends(get_db_connection)):
-    # Your existing code for the route
+async def get_admin(current_user: dict = Depends(get_current_user_from_cookie)):
+    # Get the database connection
+    connection = get_database_connection()    # Your existing code for the route
     return {"message": f"Hello, {current_user['role']} {current_user['username']}!"}
+
 
 #14  /admin/saint/age/10/130 - /admin/notsaint/age/10/130 
 # get saints between min and max ages from mysql , HTMLResponse with html template

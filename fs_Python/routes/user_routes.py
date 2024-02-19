@@ -20,8 +20,9 @@ def get_db_connection():
 
 
 @router.get("/admin")
-async def get_admin(current_user: dict = Depends(get_current_user_from_cookie), db: mysql.connector.connection.MySQLConnection = Depends(get_db_connection)):
-    # Your existing code for the route
+async def get_admin(current_user: dict = Depends(get_current_user_from_cookie), dict = Depends(get_current_user_from_cookie)):
+    # Get the database connection
+    connection = get_database_connection()   
     return {"message": f"Hello, {current_user['role']} {current_user['username']}!"}
 
 

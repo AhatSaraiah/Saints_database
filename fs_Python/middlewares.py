@@ -6,6 +6,7 @@ from routes.default_routes import get_database_connection
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+
 # Middleware for getting the current user from the token in cookies
 async def get_current_user_from_cookie(request: Request, call_next):
     token = request.cookies.get("access_token")
@@ -22,18 +23,18 @@ async def get_current_user_from_cookie(request: Request, call_next):
         if username is None:
             raise credentials_exception
 
-        # Get the role from the database based on the username
+        # Fetch user data from the database based on the username
         connection = get_database_connection()
         cursor = connection.cursor(dictionary=True)
-        cursor.callproc("GetUserByUsername", (username,))
-        result = next(cursor.stored_results())
-        user_data = result.fetchone()
+        cursor.execute("SELECT user_name, role FROM users WHERE user_name = %s", (username,))
+        user_data = cursor.fetchone()
         cursor.close()
         connection.close()
 
-        role = user_data.get("role", "user")
+        if not user_data:
+            raise credentials_exception
 
-        token_data = {"username": username, "role": role}
+        token_data = {"username": user_data["user_name"], "role": user_data["role"]}
     except JWTError:
         raise credentials_exception
 
@@ -41,9 +42,12 @@ async def get_current_user_from_cookie(request: Request, call_next):
     response = await call_next(request)
     return response
 
-# Middleware for checking admin access
+    
+
+    # Middleware for checking admin access
 async def check_admin_access(request: Request, call_next):
     user_data = getattr(request.state, "user_data", {})
+    print("User Data:", user_data)  # Add this line for debugging
     if user_data.get("role") == "admin":
         response = await call_next(request)
         return response
@@ -52,5 +56,6 @@ async def check_admin_access(request: Request, call_next):
 
 # Middleware for setting cookies
 async def set_cookies(response: Response, call_next):
+    # Your existing code for setting cookies, if any
     response = await call_next(response)
     return response
