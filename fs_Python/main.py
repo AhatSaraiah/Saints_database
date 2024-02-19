@@ -1,10 +1,10 @@
 # main.py
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from routes import admin_routes, user_routes,default_routes
-from config import SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES,ALGORITHM 
-from middlewares import get_current_user_from_cookie, check_admin_access, set_cookies
+from config import SECRET_KEY,ALGORITHM 
+from middlewares import get_current_user_from_cookie, set_cookies
 from fastapi.responses import HTMLResponse, RedirectResponse
 from mysql_connection import get_database_connection,get_database_connection
 from jose import jwt
@@ -16,7 +16,6 @@ templates = Jinja2Templates(directory="templates")
 # Register middlewares
 app.middleware("http")(set_cookies)
 app.middleware("http")(get_current_user_from_cookie)
-app.middleware("http")(check_admin_access)
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -43,7 +42,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             access_token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
 
         # Redirect based on role
-            response = RedirectResponse(url=f"/{user['role'].lower()}/dashboard")
+            response = RedirectResponse(url=f"/{user['role'].lower()}")
             response.set_cookie(key="access_token", value=access_token, httponly=True)
             return response
         else:
