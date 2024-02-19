@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Path, Request, Query,HTTPException,status,Depends,Form
+from fastapi import APIRouter, Path, Request, Query,HTTPException,Depends,Form
 from fastapi.responses import HTMLResponse,JSONResponse
 from fastapi.templating import Jinja2Templates
 from mysql_connection import get_database_connection
@@ -10,23 +10,19 @@ from mysql_connection import get_database_connection
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-# def get_db_connection():
-#     connection = get_database_connection()
-#     try:
-#         yield connection
-#     finally:
-#         connection.close()
-
-@router.get("/admin")
+@router.get("/")
 async def get_admin(current_user: dict = Depends(get_current_user_from_cookie)):
-    # Get the database connection
-    connection = get_database_connection()    # Your existing code for the route
+    # Your existing code for handling GET requests
     return {"message": f"Hello, {current_user['role']} {current_user['username']}!"}
 
+@router.post("/")
+async def post_admin():
+    # Your code for handling POST requests
+    return {"message": "Received a POST request to /admin/"}
 
 #14  /admin/saint/age/10/130 - /admin/notsaint/age/10/130 
 # get saints between min and max ages from mysql , HTMLResponse with html template
-@router.get("/admin/{saint_status}/age/{min_age}/{max_age}", response_class=HTMLResponse)
+@router.get("/{saint_status}/age/{min_age}/{max_age}", response_class=HTMLResponse)
 async def get_customers(request: Request, min_age: int, max_age: int, saint_status: str = Path(..., title="Saint Status", description="Specify 'saint' or 'notsaint'")):
     try:
         # Get the database connection
@@ -66,7 +62,7 @@ async def get_customers(request: Request, min_age: int, max_age: int, saint_stat
 
 # 14 /admin/name/ra - returns saints with name containing ra
 # get customers by name, HTMLResponse with html template
-@router.get("/admin/name/{name_contains}", response_class=HTMLResponse)
+@router.get("/name/{name_contains}", response_class=HTMLResponse)
 async def get_data_by_name(request:Request,name_contains: str = Path(..., title="Customer Name contains", description="Name of the customer")):
 
     try:
@@ -108,7 +104,7 @@ async def get_data_by_name(request:Request,name_contains: str = Path(..., title=
 
 #14 /admin/average - returns the average ages of saints and not saints.
 # get customers by name, HTMLResponse with html template
-@router.get("/admin/average",  response_class=JSONResponse)
+@router.get("/average",  response_class=JSONResponse)
 async def get_average_age(request:Request):
 
     try:
@@ -134,7 +130,7 @@ async def get_average_age(request:Request):
     
 #12- Adding the customers in the json to database  - 15: Add validations!
 #post a new saint to mysql database:
-@router.post("/admin/saints")
+@router.post("/saints")
 async def add_new_saint(request: Request, new_customer: dict):
     try:
         validate_required_fields(new_customer)

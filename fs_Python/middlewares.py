@@ -1,8 +1,8 @@
 from fastapi import Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from config import SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM
-from routes.default_routes import get_database_connection
+from config import SECRET_KEY, ALGORITHM
+from mysql_connection import get_database_connection
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -10,6 +10,9 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 # Middleware for getting the current user from the token in cookies
 async def get_current_user_from_cookie(request: Request, call_next):
     token = request.cookies.get("access_token")
+    
+    # Add this print statement
+    print("Token:", token)
 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -43,19 +46,10 @@ async def get_current_user_from_cookie(request: Request, call_next):
     response = await call_next(request)
     return response
 
-    # Middleware for checking admin access
-async def check_admin_access(request: Request, call_next):
-    user_data = getattr(request.state, "user_data", {})
-    print("User Data:", user_data) 
-    if user_data.get("role") == "admin":
-        response = await call_next(request)
-        return response
-    else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+
 
 # Middleware for setting cookies
 async def set_cookies(response: Response, call_next):
     # Your existing code for setting cookies, if any
     response = await call_next(response)
     return response
-

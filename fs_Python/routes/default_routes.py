@@ -4,23 +4,11 @@ from fastapi import FastAPI, Path, Request, Query,HTTPException,status,Depends,F
 import json
 from fastapi.responses import HTMLResponse,JSONResponse
 from fastapi.templating import Jinja2Templates
-from typing_extensions import Annotated
-from mysql_connection import get_database_connection,initialize_db
-import mysql.connector
+from mysql_connection import initialize_db
 from models.models import Customer, Short_Customer
 app = FastAPI(debug=True)
 templates = Jinja2Templates(directory="templates")
 
-#11- Connecting your server with this db.
-def connect_database():
-    try:
-        initialize_db()
-        print("Database initialization successful")
-    except Exception as e:
-        print(f"Error initializing the database: {e}")
-
-
-connect_database()
 
 
 def load_content_from_file():
@@ -167,4 +155,14 @@ async def add_new_saint(request: Request, name: str = Form(...), age: int = Form
         json.dump(content, file, indent=2)
 
     return JSONResponse(content={"message": f"New saint {name} added successfully"}, status_code=201)
+
+
+
+#11- Connecting your server with this db.
+def connect_database():
+    try:
+        initialize_db()
+        print("Database initialization successful")
+    except Exception as e:
+        print(f"Error initializing the database: {e}")
 
