@@ -21,23 +21,28 @@ async def get_current_user_from_cookie(request: Request, call_next):
     )
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
+        if token is None:
+            # Handle the case where the token is not present
+            # For example, return an error response or redirect to login
             raise credentials_exception
+        else:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            username: str = payload.get("sub")
+            if username is None:
+                raise credentials_exception
 
-        # Fetch the role from the database based on the username
-        connection = get_database_connection()
-        cursor = connection.cursor(dictionary=True)
-        cursor.callproc("GetUser", (username,))
-        result = next(cursor.stored_results())
-        user_data = result.fetchone()
-        connection.close()
+            # Fetch the role from the database based on the username
+            connection = get_database_connection()
+            cursor = connection.cursor(dictionary=True)
+            cursor.callproc("GetUser", (username,))
+            result = next(cursor.stored_results())
+            user_data = result.fetchone()
+            connection.close()
 
-        if user_data is None:
-            raise credentials_exception
+            if user_data is None:
+                raise credentials_exception
 
-        token_data = {"username": username, "role": user_data["role"]}
+            token_data = {"username": username, "role": user_data["role"]}
 
     except JWTError:
         raise credentials_exception

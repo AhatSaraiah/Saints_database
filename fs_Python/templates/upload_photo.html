@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>File Upload Form</title>
+    </head>
+    <body>
+        <h2>Upload File</h2>
+        <form action="/admin/upload" method="post" enctype="multipart/form-data">
+            <div>
+                <label for="fileNameInput">File Name:</label>
+                <input type="text" id="fileNameInput" name="file_name" required>
+            </div>
+            <div>
+                <label for="fileInput">Choose file to upload:</label>
+                <input type="file" id="fileInput" name="file" required>
+            </div>
+            <div>
+                <button type="submit">Confirm</button>
+            </div>
+        </form>
+    </body>
+</html>

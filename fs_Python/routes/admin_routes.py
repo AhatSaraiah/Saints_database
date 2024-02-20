@@ -1,13 +1,18 @@
-from fastapi import APIRouter, Path, Request,HTTPException,Depends
+from fastapi import APIRouter, Form, Path as FastAPIPath, Request,HTTPException,Depends,UploadFile, File
 from fastapi.responses import HTMLResponse,JSONResponse
 from fastapi.templating import Jinja2Templates
 import mysql.connector
 from models.models import Customer
 from middlewares import get_current_user_from_cookie  
 from mysql_connection import get_database_connection
+import shutil
+from pathlib import Path
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+UPLOAD_DIR_PATH = "assets"
+UPLOAD_DIR = Path(UPLOAD_DIR_PATH)
+
 
 @router.get("/")
 async def get_admin(current_user: dict = Depends(get_current_user_from_cookie)):
@@ -19,10 +24,37 @@ async def post_admin():
     # Your code for handling POST requests
     return {"message": "Received a POST request to /admin/"}
 
+
+
+@router.get("/upload", response_class=HTMLResponse)
+async def show_upload_form(request: Request):
+    return templates.TemplateResponse("upload_photo.html", {"request": request})
+   
+
+@router.post("/upload")
+async def handle_upload(request: Request, file_name: str = Form(...), file: UploadFile = File(...)):
+    try:
+        # Ensure the upload directory exists
+        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+        # Extract the file extension from the original filename
+        file_extension = Path(file.filename).suffix
+
+        # Save the file to the assets directory with the specified file name
+        file_path = UPLOAD_DIR / (file_name + file_extension)
+        with file_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        return {"file_name": file_name, "file_content_type": file.content_type, "file_path": str(file_path)}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error saving file: {e}")
+
+
 #14  /admin/saint/age/10/130 - /admin/notsaint/age/10/130 
 # get saints between min and max ages from mysql , HTMLResponse with html template
 @router.get("/{saint_status}/age/{min_age}/{max_age}", response_class=HTMLResponse)
-async def get_customers(request: Request, min_age: int, max_age: int, saint_status: str = Path(..., title="Saint Status", description="Specify 'saint' or 'notsaint'")):
+async def get_customers(request: Request, min_age: int, max_age: int, saint_status: str = FastAPIPath(..., title="Saint Status", description="Specify 'saint' or 'notsaint'")):
     try:
         # Get the database connection
         connection = get_database_connection()
@@ -62,7 +94,7 @@ async def get_customers(request: Request, min_age: int, max_age: int, saint_stat
 # 14 /admin/name/ra - returns saints with name containing ra
 # get customers by name, HTMLResponse with html template
 @router.get("/name/{name_contains}", response_class=HTMLResponse)
-async def get_data_by_name(request:Request,name_contains: str = Path(..., title="Customer Name contains", description="Name of the customer")):
+async def get_data_by_name(request:Request,name_contains: str = FastAPIPath(..., title="Customer Name contains", description="Name of the customer")):
 
     try:
             # Get the database connection
@@ -162,8 +194,6 @@ async def add_new_saint(request: Request, new_customer: dict):
     except mysql.connector.Error as e:
         return {"message": f"Error adding the new saint: {e}"}
     
-
-
 
 
 def validate_required_fields(new_customer):
