@@ -1,15 +1,29 @@
 # main.py
-from fastapi import Depends, FastAPI, HTTPException, Request
+import datetime
+from fastapi import Depends, FastAPI, HTTPException, Request,Response
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from routes import admin_routes, user_routes,default_routes
 from config import SECRET_KEY,ALGORITHM 
 from middlewares import get_current_user_from_cookie, set_cookies
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from mysql_connection import get_database_connection,get_database_connection
 from jose import jwt
 
 app = FastAPI()
+
+class CustomHTTPException(HTTPException):
+    def __init__(self, status_code: int, detail: str):
+        super().__init__(status_code=status_code, detail=detail)
+        self.custom_detail = detail
+
+# Custom exception handler
+async def custom_exception_handler(request: Request, exc: CustomHTTPException):
+    return JSONResponse(
+        content={"status": exc.status_code, "message": exc.custom_detail, "date": str(datetime.now())},
+        status_code=exc.status_code,
+    )
+
 
 
 templates = Jinja2Templates(directory="templates")
@@ -47,7 +61,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             return response
         else:
             # Authentication failed
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+            raise CustomHTTPException(status_code=401, detail="Invalid credentials")
+
     finally:
         cursor.close()
         connection.close()
