@@ -34,14 +34,7 @@ async def show_upload_form(request: Request):
 @router.post("/upload")
 async def handle_upload(request: Request, file_name: str = Form(...), file: UploadFile = File(...)):
     try:
-        # Ensure the upload directory exists
-        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
-        # Extract the file extension from the original filename
-        file_extension = Path(file.filename).suffix
-
-        # Save the file to the assets directory with the specified file name
-        file_path = UPLOAD_DIR / (file_name + file_extension)
+        file_path =make_path(file_name, file)
         with file_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
@@ -51,28 +44,26 @@ async def handle_upload(request: Request, file_name: str = Form(...), file: Uplo
         raise HTTPException(status_code=500, detail=f"Error saving file: {e}")
 
 
+
 #14  /admin/saint/age/10/130 - /admin/notsaint/age/10/130 
 # get saints between min and max ages from mysql , HTMLResponse with html template
 @router.get("/{saint_status}/age/{min_age}/{max_age}", response_class=HTMLResponse)
 async def get_customers(request: Request, min_age: int, max_age: int, saint_status: str = FastAPIPath(..., title="Saint Status", description="Specify 'saint' or 'notsaint'")):
     try:
         # Get the database connection
-        connection = get_database_connection()
+        customers = getCustomersBetween(min_age, max_age, saint_status)
+        parsed_customers = set_parsed_customers(customers)
 
-        # Create a cursor object to interact with the database
-        cursor = connection.cursor()
-        cursor.callproc("GetCustomersByAgeRange", (min_age, max_age, saint_status))
-        result = next(cursor.stored_results())
-        customers = result.fetchall()
+        return templates.TemplateResponse("customers.html", {"request": request, "customers": parsed_customers})
+  
+    except mysql.connector.Error as e:
+        return {"message": f"Error retrieving customers: {e}"}
 
+def set_parsed_customers(customers):
+    parsed_customers = []
 
-        # Close the cursor and connection
-        cursor.close()
-        connection.close()
-        parsed_customers = []
-
-        for customer in customers:
-            customer_data = {
+    for customer in customers:
+        customer_data = {
                 "id": customer[0],
                 "name": customer[1],
                 "age": customer[2],
@@ -81,13 +72,9 @@ async def get_customers(request: Request, min_age: int, max_age: int, saint_stat
                     "isSaint": customer[4]
                 }
             }
-            customer_instance = Customer(**customer_data)
-            parsed_customers.append(customer_instance)
-
-        return templates.TemplateResponse("customers.html", {"request": request, "customers": parsed_customers})
-  
-    except mysql.connector.Error as e:
-        return {"message": f"Error retrieving customers: {e}"}
+        customer_instance = Customer(**customer_data)
+        parsed_customers.append(customer_instance)
+    return parsed_customers
 
 
 
@@ -97,40 +84,13 @@ async def get_customers(request: Request, min_age: int, max_age: int, saint_stat
 async def get_data_by_name(request:Request,name_contains: str = FastAPIPath(..., title="Customer Name contains", description="Name of the customer")):
 
     try:
-            # Get the database connection
-            connection = get_database_connection()
-
-      
-             # Create a cursor object to interact with the database
-            cursor = connection.cursor()
-            cursor.callproc("GetCustomersByName", (name_contains,))
-            result = next(cursor.stored_results())
-            customers = result.fetchall()
-
-            # Close the cursor and connection
-            cursor.close()
-            connection.close()
-
-            parsed_customers = []
-
-            for customer in customers:
-                customer_data = {
-                    "id": customer[0],
-                    "name": customer[1],
-                    "age": customer[2],
-                    "occupation": {
-                        "name": customer[3],
-                        "isSaint": customer[4]
-                    }
-                }
-                customer_instance = Customer(**customer_data)
-                parsed_customers.append(customer_instance)
-
-            return templates.TemplateResponse("customers.html", {"request": request, "customers": parsed_customers})
+        # Get the database connection
+        customers = getCustomerByNameContains(name_contains)
+        parsed_customers = set_parsed_customers(customers)
+        return templates.TemplateResponse("customers.html", {"request": request, "customers": parsed_customers})
     
     except mysql.connector.Error as e:
-            return {"message": f"Error retrieving customers: {e}"}
-
+        return {"message": f"Error retrieving customers: {e}"}
 
 
 #14 /admin/average - returns the average ages of saints and not saints.
@@ -140,18 +100,7 @@ async def get_average_age(request:Request):
 
     try:
             # Get the database connection
-            connection = get_database_connection()
-
-            # Create a cursor object to interact with the database
-            cursor = connection.cursor()
-            cursor.callproc("GetAverageAge", ())
-            result = next(cursor.stored_results())
-            avg_age = result.fetchone()[0]
-
-            # Close the cursor and connection
-            cursor.close()
-            connection.close()
-
+            avg_age = get_average_age()
 
             return {"Average age":f"{avg_age}"}
     
@@ -196,6 +145,122 @@ async def add_new_saint(request: Request, new_customer: dict):
     
 
 
+@router.get("/customers", response_class=HTMLResponse)
+async def get_customers(request: Request):
+
+    customers = getAllCustomers()
+    parsed_customers = set_parsed_customers(customers)
+
+    return templates.TemplateResponse("customers.html", {"request": request, "customers": parsed_customers})
+
+@router.get("/customers_with_upload", response_class=HTMLResponse)
+async def get_customers_with_upload(request: Request):
+    try:
+        # Get the database connection
+        customers = getAllCustomers()
+        parsed_customers = set_parsed_customers(customers)
+
+        return templates.TemplateResponse("customers_with_upload.html", {"request": request, "customers": parsed_customers})
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving customers: {e}")
+
+
+@router.post("/upload_for_customer/{customer_id}")
+async def handle_upload_for_customer(request: Request, customer_id: int, file_name: str = Form(...),file: UploadFile = File(...),):
+    try:
+        # Ensure the upload directory exists
+        file_path = make_path(file_name, file)
+        with file_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        # Save the file path in the database for the corresponding customer
+        save_photo_to_database(customer_id, file_path)
+
+        return {"file_name": file_name, "file_content_type": file.content_type, "file_path": str(file_path)}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error saving file: {e}")
+
+
+def getAllCustomers():
+
+    connection = get_database_connection()
+    cursor = connection.cursor()
+    cursor.callproc("GetCustomers")
+    result = next(cursor.stored_results())
+    customers = result.fetchall()
+    cursor.close()
+    connection.close()
+    return customers
+
+
+def getCustomerByNameContains(name_contains):
+
+    connection = get_database_connection()
+    # Create a cursor object to interact with the database
+    cursor = connection.cursor()
+    cursor.callproc("GetCustomersByName", (name_contains,))
+    result = next(cursor.stored_results())
+    customers = result.fetchall()
+    # Close the cursor and connection
+    cursor.close()
+    connection.close()
+    return customers
+
+
+def getCustomersBetween(min_age, max_age, saint_status):
+
+    connection = get_database_connection()
+    # Create a cursor object to interact with the database
+    cursor = connection.cursor()
+    cursor.callproc("GetCustomersByAgeRange", (min_age, max_age, saint_status))
+    result = next(cursor.stored_results())
+    customers = result.fetchall()
+    # Close the cursor and connection
+    cursor.close()
+    connection.close()
+    return customers
+
+
+
+
+
+def save_photo_to_database(customer_id, file_path):
+
+    connection = get_database_connection()
+    cursor = connection.cursor()
+    cursor.execute("UPDATE customers SET photo_path = %s WHERE id = %s", (str(file_path), customer_id))
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+
+
+def make_path(file_name, file):
+
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    # Extract the file extension from the original filename
+    file_extension = Path(file.filename).suffix
+    # Save the file to the assets directory with the specified file name
+    file_path = UPLOAD_DIR / (file_name + file_extension)
+    return file_path
+
+
+def get_average_age():
+    connection = get_database_connection()
+    # Create a cursor object to interact with the database
+    cursor = connection.cursor()
+    cursor.callproc("GetAverageAge", ())
+    result = next(cursor.stored_results())
+    avg_age = result.fetchone()[0]
+    # Close the cursor and connection
+    cursor.close()
+    connection.close()
+    return avg_age
+
+
+    
+
 def validate_required_fields(new_customer):
     required_fields = ["name", "age", "occupation"]
     if not all(field in new_customer for field in required_fields):
@@ -225,3 +290,5 @@ def insert_occupation(cursor, name, is_saint):
 def insert_customer(cursor, name, age, occupation_id):
     add_customer_query = "INSERT INTO customers (name, age, occupation_id) VALUES (%s, %s, %s)"
     cursor.execute(add_customer_query, (name, age, occupation_id))
+
+
