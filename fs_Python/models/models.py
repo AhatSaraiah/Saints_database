@@ -10,6 +10,7 @@ class Customer(BaseModel):
     name: str
     age: int
     occupation: Occupation  # Change this to use the Occupation model
+    imageURL: str = None
 
 class Config:
     orm_mode = True

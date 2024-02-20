@@ -9,22 +9,20 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Middleware for getting the current user from the token in cookies
 async def get_current_user_from_cookie(request: Request, call_next):
-    token = request.cookies.get("access_token")
+   token = request.cookies.get("access_token")
     
     # Add this print statement
-    print("Token:", token)
+   print("Token:", token)
 
-    credentials_exception = HTTPException(
+   credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    try:
+   try:
         if token is None:
-            # Handle the case where the token is not present
-            # For example, return an error response or redirect to login
-            raise credentials_exception
+            raise credentials_exception  # Raise an exception if token is None
         else:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
             username: str = payload.get("sub")
@@ -44,13 +42,12 @@ async def get_current_user_from_cookie(request: Request, call_next):
 
             token_data = {"username": username, "role": user_data["role"]}
 
-    except JWTError:
-        raise credentials_exception
+   except JWTError:
+       raise credentials_exception
 
-    request.state.user_data = token_data 
-    response = await call_next(request)
-    return response
-
+   request.state.user_data = token_data 
+   response = await call_next(request)
+   return response
 
 
 # Middleware for setting cookies
