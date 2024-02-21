@@ -43,11 +43,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
     try:
         # Create a cursor object to interact with the database
-        cursor = connection.cursor(dictionary=True)
-        cursor.callproc("GetAllUsers")
-        result = next(cursor.stored_results())
-        users_data = result.fetchall()
-        user = next((u for u in users_data if u["user_name"] == form_data.username), None)
+        cursor, user = getAllUsers(form_data, connection)
 
         if user and form_data.password == user["password"]:
             # Authentication successful
@@ -66,6 +62,16 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     finally:
         cursor.close()
         connection.close()
+
+        
+
+def getAllUsers(form_data, connection):
+    cursor = connection.cursor(dictionary=True)
+    cursor.callproc("GetAllUsers")
+    result = next(cursor.stored_results())
+    users_data = result.fetchall()
+    user = next((u for u in users_data if u["user_name"] == form_data.username), None)
+    return cursor,user
 
 
 app.include_router(admin_routes.router, prefix="/admin", tags=["admin"])

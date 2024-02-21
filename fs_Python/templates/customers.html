@@ -1,12 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Customer Data</title>
-    </head>
-    <body>
-    <h1>Customer Data</h1>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customers Data</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            padding: 15px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        strong {
+            color: #007bff;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+
+        hr {
+            margin-top: 15px;
+            margin-bottom: 10px;
+            border: 0;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Customers Data</h1>
     <ul>
         {% for customer in customers %}
             <li>
@@ -16,10 +62,10 @@
                 <strong>Occupation:</strong> {{ customer.occupation.name }}<br>
                 <strong>Is Saint:</strong> {{ customer.occupation.isSaint }}<br>
                 <strong>Photo url:</strong> {{ customer.photo_path }}<br>
-                <img src="{{customer.photo_path}}"/><br>
+                <img src="{{customer.photo_path}}" alt="Customer Photo"/><br>
                 <hr>
             </li>
         {% endfor %}
     </ul>
-    </body>
+</body>
 </html>
