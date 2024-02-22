@@ -21,6 +21,9 @@ s3_client = boto3.client(
     region_name=S3_REGION
 )
 
+# Set the bucket ACL to 'public-read'
+# s3_client.put_bucket_acl(Bucket=S3_BUCKET_NAME, ACL='public-read')
+
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 UPLOAD_DIR_PATH = "assets"
