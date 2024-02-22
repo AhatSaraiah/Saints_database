@@ -1,7 +1,9 @@
 # main.py
 import datetime
+import os
 from fastapi import Depends, FastAPI, HTTPException, Request,Response
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from routes import admin_routes, user_routes,default_routes
 from config import SECRET_KEY,ALGORITHM 
@@ -11,6 +13,15 @@ from mysql_connection import get_database_connection,get_database_connection
 from jose import jwt
 
 app = FastAPI()
+
+
+# Absolute path to the "assets" directory
+assets_path = os.path.join("C:\\Users\\ahats\\Downloads\\fs_Python\\fs_Python", "assets")
+
+# Mount the entire "assets" directory as a static directory
+app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
+
+
 
 class CustomHTTPException(HTTPException):
     def __init__(self, status_code: int, detail: str):

@@ -1,5 +1,7 @@
+import os
 from fastapi import APIRouter, Form, Path as FastAPIPath, Request,HTTPException,Depends,UploadFile, File
 from fastapi.responses import HTMLResponse,JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import mysql.connector
 from models.models import Customer
@@ -13,6 +15,9 @@ templates = Jinja2Templates(directory="templates")
 UPLOAD_DIR_PATH = "assets"
 UPLOAD_DIR = Path(UPLOAD_DIR_PATH)
 
+
+# Mount the entire "assets" directory as a static directory
+# router.mount("/assets", StaticFiles(directory="assets"), name="assets")
 
 @router.get("/")
 async def get_admin(current_user: dict = Depends(get_current_user_from_cookie)):
@@ -45,6 +50,35 @@ async def handle_upload(request: Request, file_name: str = Form(...), file: Uplo
 
 
 
+@router.get("/customers_with_upload", response_class=HTMLResponse)
+async def get_customers_with_upload(request: Request):
+    try:
+        # Get the database connection
+        customers = getAllCustomers()
+        parsed_customers = set_parsed_customers(customers)
+
+        return templates.TemplateResponse("customers_with_upload.html", {"request": request, "customers": parsed_customers})
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving customers: {e}")
+
+
+@router.post("/upload_for_customer/{customer_id}")
+async def handle_upload_for_customer(request: Request, customer_id: int, file_name: str = Form(...),file: UploadFile = File(...),):
+    try:
+        # Ensure the upload directory exists
+        file_path = make_path(file_name, file)
+        with file_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        # Save the file path in the database for the corresponding customer
+        save_photo_to_database(customer_id, file_path)
+
+        return {"file_name": file_name, "file_content_type": file.content_type, "file_path": str(file_path)}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error saving file: {e}")
+
+
 #14  /admin/saint/age/10/130 - /admin/notsaint/age/10/130 
 # get saints between min and max ages from mysql , HTMLResponse with html template
 @router.get("/{saint_status}/age/{min_age}/{max_age}", response_class=HTMLResponse)
@@ -58,24 +92,6 @@ async def get_customers(request: Request, min_age: int, max_age: int, saint_stat
   
     except mysql.connector.Error as e:
         return {"message": f"Error retrieving customers: {e}"}
-
-def set_parsed_customers(customers):
-    parsed_customers = []
-
-    for customer in customers:
-        customer_data = {
-                "id": customer[0],
-                "name": customer[1],
-                "age": customer[2],
-                "occupation": {
-                    "name": customer[3],
-                    "isSaint": customer[4]
-                }
-            }
-        customer_instance = Customer(**customer_data)
-        parsed_customers.append(customer_instance)
-    return parsed_customers
-
 
 
 # 14 /admin/name/ra - returns saints with name containing ra
@@ -153,40 +169,33 @@ async def get_customers(request: Request):
 
     return templates.TemplateResponse("customers.html", {"request": request, "customers": parsed_customers})
 
-@router.get("/customers_with_upload", response_class=HTMLResponse)
-async def get_customers_with_upload(request: Request):
-    try:
-        # Get the database connection
-        customers = getAllCustomers()
-        parsed_customers = set_parsed_customers(customers)
-
-        return templates.TemplateResponse("customers_with_upload.html", {"request": request, "customers": parsed_customers})
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error retrieving customers: {e}")
 
 
-@router.post("/upload_for_customer/{customer_id}")
-async def handle_upload_for_customer(request: Request, customer_id: int, file_name: str = Form(...),file: UploadFile = File(...),):
-    try:
-        # Ensure the upload directory exists
-        file_path = make_path(file_name, file)
-        with file_path.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        # Save the file path in the database for the corresponding customer
-        save_photo_to_database(customer_id, file_path)
 
-        return {"file_name": file_name, "file_content_type": file.content_type, "file_path": str(file_path)}
+def set_parsed_customers(customers):
+    parsed_customers = []
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error saving file: {e}")
+    for customer in customers:
+        customer_data = {
+            "id": customer[0],
+            "name": customer[1],
+            "age": customer[2],
+            "occupation": {
+                "name": customer[3],
+                "isSaint": customer[4]
+            },
+            "photo_path": customer[5] if len(customer) > 5 else None  # Check if the index is within the tuple length
+        }
+        customer_instance = Customer(**customer_data)
+        parsed_customers.append(customer_instance)
+    return parsed_customers
 
 
 def getAllCustomers():
 
     connection = get_database_connection()
     cursor = connection.cursor()
-    cursor.callproc("GetCustomers")
+    cursor.callproc("GetAllCustomers")
     result = next(cursor.stored_results())
     customers = result.fetchall()
     cursor.close()
