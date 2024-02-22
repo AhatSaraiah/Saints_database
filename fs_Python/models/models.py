@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel
 
 
@@ -10,7 +11,7 @@ class Customer(BaseModel):
     name: str
     age: int
     occupation: Occupation  # Change this to use the Occupation model
-    imageURL: str = None
+    photo_path: Optional[str]  # Make photo_path optional by using Optional[str]
 
 class Config:
     orm_mode = True

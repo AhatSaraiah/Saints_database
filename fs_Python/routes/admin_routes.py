@@ -1,5 +1,7 @@
+import os
 from fastapi import APIRouter, Form, Path as FastAPIPath, Request,HTTPException,Depends,UploadFile, File
 from fastapi.responses import HTMLResponse,JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import mysql.connector
 from models.models import Customer
@@ -51,6 +53,21 @@ async def handle_upload_for_customer(request: Request, customer_id: int, file_na
     response = upload_file_to_s3(file, S3_BUCKET_NAME, object_name)
     save_photo_to_database(customer_id, response)
     return {"message": response}
+
+
+@router.get("/customers_with_upload", response_class=HTMLResponse)
+async def get_customers_with_upload(request: Request):
+    try:
+        # Get the database connection
+        customers = getAllCustomers()
+        parsed_customers = set_parsed_customers(customers)
+
+        return templates.TemplateResponse("customers_with_upload.html", {"request": request, "customers": parsed_customers})
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving customers: {e}")
+
+
 
 
 #14  /admin/saint/age/10/130 - /admin/notsaint/age/10/130 
@@ -166,30 +183,31 @@ def upload_file_to_s3(file, bucket_name, object_name):
 
 
 
+
 def set_parsed_customers(customers):
     parsed_customers = []
 
     for customer in customers:
         customer_data = {
-                "id": customer[0],
-                "name": customer[1],
-                "age": customer[2],
-                "occupation": {
-                    "name": customer[3],
-                    "isSaint": customer[4]
-                }
-            }
+            "id": customer[0],
+            "name": customer[1],
+            "age": customer[2],
+            "occupation": {
+                "name": customer[3],
+                "isSaint": customer[4]
+            },
+            "photo_path": customer[5] if len(customer) > 5 else None  # Check if the index is within the tuple length
+        }
         customer_instance = Customer(**customer_data)
         parsed_customers.append(customer_instance)
     return parsed_customers
-
 
 
 def getAllCustomers():
 
     connection = get_database_connection()
     cursor = connection.cursor()
-    cursor.callproc("GetCustomers")
+    cursor.callproc("GetAllCustomers")
     result = next(cursor.stored_results())
     customers = result.fetchall()
     cursor.close()
