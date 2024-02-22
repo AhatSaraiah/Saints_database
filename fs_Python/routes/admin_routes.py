@@ -11,13 +11,21 @@ import shutil
 from pathlib import Path
 import boto3
 from botocore.exceptions import NoCredentialsError
-from config import S3_BUCKET_NAME,S3_REGION
+from config import S3_BUCKET_NAME,S3_REGION,S3_ACCESS_KEY,S3_SECRET_ACCESS_KEY
+# s3_client = boto3.client('s3', region_name=S3_REGION)
+
+s3_client = boto3.client(
+    's3',
+    aws_access_key_id=S3_ACCESS_KEY,
+    aws_secret_access_key=S3_SECRET_ACCESS_KEY,
+    region_name=S3_REGION
+)
+
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 UPLOAD_DIR_PATH = "assets"
 UPLOAD_DIR = Path(UPLOAD_DIR_PATH)
 
-s3_client = boto3.client('s3', region_name=S3_REGION)
 
 @router.get("/")
 async def get_admin(current_user: dict = Depends(get_current_user_from_cookie)):
