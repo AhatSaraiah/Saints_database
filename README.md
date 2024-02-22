@@ -43,9 +43,9 @@ Before running the project, ensure that you have the following:
 
 7. Run the application:
 
-  ```bash
-  uvicorn main:app --reload
-  ```
+     ```bash
+     uvicorn main:app --reload
+     ```
 
 The FastAPI application will be accessible at http://127.0.0.1:8000.
 
