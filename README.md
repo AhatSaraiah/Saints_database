@@ -47,25 +47,25 @@ Before running the project, ensure that you have the following:
      uvicorn main:app --reload
      ```
 
-The FastAPI application will be accessible at http://127.0.0.1:8000.
+   The FastAPI application will be accessible at http://127.0.0.1:8000.
 
 ## Usage
 1. Log in:
 
-Access the login page at http://127.0.0.1:8000/login and log in with valid credentials. Users are redirected based on their roles.
+   Access the login page at http://127.0.0.1:8000/login and log in with valid credentials. Users are redirected based on their roles.
 
 2. Access role-specific routes:
 
-Admin routes: http://127.0.0.1:8000/admin
-User routes: http://127.0.0.1:8000/user
-Default routes: http://127.0.0.1:8000/default
+   Admin routes: http://127.0.0.1:8000/admin
+   User routes: http://127.0.0.1:8000/user
+   Default routes: http://127.0.0.1:8000/default
 
 3. File uploads:
 
-File uploads are handled through the S3 integration. Implement an endpoint to handle file uploads and associate file paths with users.
+   File uploads are handled through the S3 integration. Implement an endpoint to handle file uploads and associate file paths with users.
 
 ## Contributions
-Feel free to contribute to this project by opening issues or submitting pull requests. Your feedback and contributions are welcome!
+   Feel free to contribute to this project by opening issues or submitting pull requests. Your feedback and contributions are welcome!
 
 ## License
-This project is licensed under the MIT License.
+   This project is licensed under the MIT License.
