@@ -24,7 +24,7 @@ Before running the project, ensure that you have the following:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/your-fastapi-project.git
+   git clone https://github.com/AhatSaraiah/Saints_database.git
 
 2. Install dependencies:
 
