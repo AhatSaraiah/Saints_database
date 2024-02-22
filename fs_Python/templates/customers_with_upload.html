@@ -85,6 +85,12 @@
                 <strong>Age:</strong> {{ customer.age }}<br>
                 <strong>Occupation:</strong> {{ customer.occupation.name }}<br>
                 <strong>Is Saint:</strong> {{ customer.occupation.isSaint }}<br>
+                {% if customer.photo_path %}
+                <img src="{{ customer.photo_path }}" alt="{{ customer.name }} Photo" width="100" height="100" onerror="console.error('Error loading image:', '{{ customer.photo_path }}')">
+                {% else %}
+                    <em>No photo available</em>
+                {% endif %}
+                <hr>
                 
                 <form action="/admin/upload_for_customer/{{ customer.id }}" method="post" enctype="multipart/form-data">
                     <div>

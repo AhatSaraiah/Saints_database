@@ -9,15 +9,23 @@ from middlewares import get_current_user_from_cookie
 from mysql_connection import get_database_connection
 import shutil
 from pathlib import Path
+import boto3
+from botocore.exceptions import NoCredentialsError
+from config import S3_BUCKET_NAME,S3_REGION,S3_ACCESS_KEY,S3_SECRET_ACCESS_KEY
+# s3_client = boto3.client('s3', region_name=S3_REGION)
+
+s3_client = boto3.client(
+    's3',
+    aws_access_key_id=S3_ACCESS_KEY,
+    aws_secret_access_key=S3_SECRET_ACCESS_KEY,
+    region_name=S3_REGION
+)
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 UPLOAD_DIR_PATH = "assets"
 UPLOAD_DIR = Path(UPLOAD_DIR_PATH)
 
-
-# Mount the entire "assets" directory as a static directory
-# router.mount("/assets", StaticFiles(directory="assets"), name="assets")
 
 @router.get("/")
 async def get_admin(current_user: dict = Depends(get_current_user_from_cookie)):
@@ -30,7 +38,6 @@ async def post_admin():
     return {"message": "Received a POST request to /admin/"}
 
 
-
 @router.get("/upload", response_class=HTMLResponse)
 async def show_upload_form(request: Request):
     return templates.TemplateResponse("upload_photo.html", {"request": request})
@@ -38,16 +45,22 @@ async def show_upload_form(request: Request):
 
 @router.post("/upload")
 async def handle_upload(request: Request, file_name: str = Form(...), file: UploadFile = File(...)):
-    try:
-        file_path =make_path(file_name, file)
-        with file_path.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
 
-        return {"file_name": file_name, "file_content_type": file.content_type, "file_path": str(file_path)}
+    file_extension = Path(file.filename).suffix
+    object_name = file_name + file_extension
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error saving file: {e}")
+    response = upload_file_to_s3(file, S3_BUCKET_NAME, object_name)
+    return {"message": response}
 
+@router.post("/upload_for_customer/{customer_id}")
+async def handle_upload_for_customer(request: Request, customer_id: int, file_name: str = Form(...),file: UploadFile = File(...),):
+        
+    file_extension = Path(file.filename).suffix
+    object_name = file_name + file_extension
+
+    response = upload_file_to_s3(file, S3_BUCKET_NAME, object_name)
+    save_photo_to_database(customer_id, response)
+    return {"message": response}
 
 
 @router.get("/customers_with_upload", response_class=HTMLResponse)
@@ -63,20 +76,6 @@ async def get_customers_with_upload(request: Request):
         raise HTTPException(status_code=500, detail=f"Error retrieving customers: {e}")
 
 
-@router.post("/upload_for_customer/{customer_id}")
-async def handle_upload_for_customer(request: Request, customer_id: int, file_name: str = Form(...),file: UploadFile = File(...),):
-    try:
-        # Ensure the upload directory exists
-        file_path = make_path(file_name, file)
-        with file_path.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        # Save the file path in the database for the corresponding customer
-        save_photo_to_database(customer_id, file_path)
-
-        return {"file_name": file_name, "file_content_type": file.content_type, "file_path": str(file_path)}
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error saving file: {e}")
 
 
 #14  /admin/saint/age/10/130 - /admin/notsaint/age/10/130 
@@ -169,6 +168,27 @@ async def get_customers(request: Request):
 
     return templates.TemplateResponse("customers.html", {"request": request, "customers": parsed_customers})
 
+@router.get("/customers_with_upload", response_class=HTMLResponse)
+async def get_customers_with_upload(request: Request):
+    try:
+        # Get the database connection
+        customers = getAllCustomers()
+        parsed_customers = set_parsed_customers(customers)
+
+        return templates.TemplateResponse("customers_with_upload.html", {"request": request, "customers": parsed_customers})
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving customers: {e}")
+
+def upload_file_to_s3(file, bucket_name, object_name):
+    try:
+        s3_client.upload_fileobj(file.file, bucket_name, object_name)
+        # Return the S3 file path after successful upload
+        s3_file_path = f"https://{bucket_name}.s3.amazonaws.com/{object_name}"
+        return s3_file_path
+    except NoCredentialsError:
+        raise HTTPException(status_code=500, detail="AWS credentials not available.")
+
 
 
 
@@ -231,9 +251,6 @@ def getCustomersBetween(min_age, max_age, saint_status):
     return customers
 
 
-
-
-
 def save_photo_to_database(customer_id, file_path):
 
     connection = get_database_connection()
@@ -266,8 +283,6 @@ def get_average_age():
     cursor.close()
     connection.close()
     return avg_age
-
-
     
 
 def validate_required_fields(new_customer):
