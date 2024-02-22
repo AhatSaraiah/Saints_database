@@ -28,9 +28,10 @@ Before running the project, ensure that you have the following:
 
 2. Install dependencies:
 
-  ```bash
-  cd your-fastapi-project
-  pip install -r requirements.txt
+     ```bash
+     cd your-fastapi-project
+     pip install -r requirements.txt
+     ```
 
 3. Configure AWS credentials:
 
@@ -44,6 +45,7 @@ Before running the project, ensure that you have the following:
 
   ```bash
   uvicorn main:app --reload
+  ```
 
 The FastAPI application will be accessible at http://127.0.0.1:8000.
 
