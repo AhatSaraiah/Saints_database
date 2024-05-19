@@ -1,4 +1,4 @@
-# FastAPI Project with Authentication, MySQL, and Amazon S3 Integration
+# FastAPI Project 
 
 This project is a FastAPI application that provides authentication, MySQL database integration, and Amazon S3 file storage. Users can log in with credentials, and based on their roles, they are redirected to specific routes. User data is stored in a MySQL database, and file uploads are handled by Amazon S3.
 
@@ -25,6 +25,7 @@ Before running the project, ensure that you have the following:
 
    ```bash
    git clone https://github.com/AhatSaraiah/Saints_database.git
+   ```
 
 2. Install dependencies:
 
